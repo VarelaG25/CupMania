@@ -6,6 +6,7 @@ import TaskGroupView from "@/views/TaskGroup/TaskGroupView.vue";
 import ProfileView from "@/views/Profile/ProfileView.vue";
 import LoginView from "@/views/Auth/LoginView.vue";
 import RegisterView from "@/views/Auth/RegisterView.vue";
+// @ts-ignore
 import ChatsView from "@/views/Chats/ChatsView.vue";
 
 const routes = [
