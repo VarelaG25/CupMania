@@ -32,7 +32,8 @@ defineEmits(["update:modelValue"]);
           $emit('update:modelValue', ($event.target as HTMLInputElement).value)
         "
         :placeholder="placeholder"
-        class="w-full pl-10 pr-4 py-3 rounded-xl bg-white/30 border border-black/30 placeholder-black/70 text-black focus:outline-none focus:ring-2 focus:ring-black/60 transition"
+        class="w-full py-3 rounded-xl bg-white/30 border border-black/30 placeholder-black/70 text-black focus:outline-none focus:ring-2 focus:ring-black/60 transition"
+        :class="icon ? 'pl-10 pr-4' : 'px-4'"
       />
     </div>
   </div>

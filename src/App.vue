@@ -9,6 +9,10 @@ const route = useRoute();
 const isAuthPage = computed(() => {
   return route.path === "/login" || route.path === "/register";
 });
+
+const isChatPage = computed(() => {
+  return route.path.startsWith("/chats");
+});
 </script>
 
 <template>
@@ -18,7 +22,7 @@ const isAuthPage = computed(() => {
     <main>
       <router-view />
     </main>
-    <VFooter />
+    <VFooter v-if="!isChatPage" />
   </div>
 
   <!-- Si ES login/register -->

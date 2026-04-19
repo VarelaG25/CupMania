@@ -75,7 +75,7 @@ const closeMenu = () => {
 
 <template>
   <nav v-if="!hideNavbar" class="bg-slate-900 shadow-sm">
-    <div class="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
+    <div class="px-6 py-3 flex justify-between items-center">
       <!-- LOGO -->
       <RouterLink
         to="/"
