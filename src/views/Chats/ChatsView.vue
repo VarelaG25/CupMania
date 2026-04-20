@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, computed } from "vue";
+import { ref, nextTick, watch, computed, onMounted, onUnmounted } from "vue";
+import { io, Socket } from "socket.io-client";
 import {
   ArrowLeft,
   Send,
@@ -11,59 +12,103 @@ import {
   UserPlus,
   MoreVertical,
   X,
-  Users, // Icono para el botón de crear grupo
-  Check, // Icono para selección de contactos
+  Users,
+  Check,
 } from "lucide-vue-next";
-
-import { chats, chatMessages } from "./mockData";
 import VInput from "@/components/VInpput/VInput.vue";
+import type { ChatMessage, Chat } from "./interfaces";
+// --- CONFIGURACIÓN DE CONEXIÓN ---
+const API_URL = "http://localhost:3000";
+let socket: Socket;
 
-interface Chat {
-  id: string;
-  name: string;
-  avatar: string;
-  type: "private" | "group";
-  participants: string[];
-  lastMessage?: string;
-  lastMessageTime: string | Date;
-}
-
-interface ChatMessage {
-  id: string;
-  senderId: string;
-  senderName?: string;
-  senderAvatar?: string;
-  content: string;
-  timestamp: Date | string;
-  type: string;
-}
-
-// ESTADOS
+// --- ESTADOS ---
 const chatContainer = ref<HTMLElement | null>(null);
 const selectedChat = ref<Chat | null>(null);
 const messageInput = ref("");
+const chats = ref<Chat[]>([]);
 const messages = ref<ChatMessage[]>([]);
-const searchMessage = ref(""); // Búsqueda Sidebar
-const searchContact = ref(""); // Búsqueda Modal
-const showGroupModal = ref(false); // Modal añadir miembros
-const showCreateGroupModal = ref(false); // Modal crear grupo
+const searchMessage = ref("");
+const searchContact = ref("");
+const showGroupModal = ref(false);
+const showCreateGroupModal = ref(false);
 
-// Lógica de Creación de Grupo
 const newGroupName = ref("");
 const selectedContacts = ref<string[]>([]);
+const availableContacts = ref<any[]>([]);
 
-// Simulación de contactos disponibles
-const availableContacts = [
-  { id: "user2", name: "Carlos Pérez", avatar: "CP" },
-  { id: "user3", name: "Ana García", avatar: "AG" },
-  { id: "user6", name: "Roberto Tool", avatar: "RT" },
-  { id: "user7", name: "Elena Sport", avatar: "ES" },
-];
+// --- LÓGICA DE CARGA INICIAL CORREGIDA ---
+onMounted(async () => {
+  socket = io(API_URL);
 
-const onlineUsers = new Set(["user2", "user6", "user7"]);
-const isUserOnline = (id: string) => onlineUsers.has(id);
+  socket.on("receive_message", (newMessage: ChatMessage) => {
+    if (selectedChat.value && newMessage.chatId === selectedChat.value.id) {
+      messages.value.push(newMessage);
+    }
+
+    // Buscamos el chat en la lista
+    const chatIndex = chats.value.findIndex((c) => c.id === newMessage.chatId);
+
+    // CORRECCIÓN LÍNEAS 71-72: Validamos que el chat exista antes de editarlo
+    if (chatIndex !== -1 && chats.value[chatIndex]) {
+      chats.value[chatIndex].lastMessage = newMessage.content;
+      chats.value[chatIndex].lastMessageTime = newMessage.timestamp;
+    }
+  });
+
+  try {
+    const resChats = await fetch(`${API_URL}/api/chats`);
+    const dataChats = await resChats.json();
+    chats.value = dataChats || []; // Aseguramos que siempre sea un array
+
+    const resUsers = await fetch(`${API_URL}/api/users`);
+    const dataUsers = await resUsers.json();
+    availableContacts.value = dataUsers || [];
+  } catch (error) {
+    console.error("Error cargando datos iniciales:", error);
+  }
+});
+
+onUnmounted(() => {
+  if (socket) socket.disconnect();
+});
+
+// --- FUNCIONES CORE ---
+const selectChat = async (chat: Chat) => {
+  selectedChat.value = chat;
+  socket.emit("join_chat", chat.id);
+
+  try {
+    const response = await fetch(`${API_URL}/api/messages/${chat.id}`);
+    messages.value = await response.json();
+    scrollToBottom();
+  } catch (error) {
+    console.error("Error cargando mensajes:", error);
+  }
+};
+
+const sendMessage = () => {
+  if (!messageInput.value.trim() || !selectedChat.value) return;
+
+  const payload = {
+    chatId: selectedChat.value.id,
+    senderId: "user1",
+    senderName: "Tú",
+    content: messageInput.value,
+    type: "text",
+  };
+
+  socket.emit("send_message", payload);
+  messageInput.value = "";
+};
+
+// --- FUNCIONES AUXILIARES (CORRECCIÓN DE ERRORES 2339) ---
+const isUserOnline = (id: string) => {
+  const onlineUsers = new Set(["user2", "user6", "user7"]);
+  return onlineUsers.has(id);
+};
 
 const getChatOnlineStatus = (chat: Chat): boolean => {
+  if (!chat || !chat.participants) return false;
   if (chat.type === "private") {
     const other = chat.participants.find((p) => p !== "user1");
     return other ? isUserOnline(other) : false;
@@ -71,53 +116,10 @@ const getChatOnlineStatus = (chat: Chat): boolean => {
   return chat.participants.some((p) => p !== "user1" && isUserOnline(p));
 };
 
-const scrollToBottom = async () => {
-  await nextTick();
-  if (chatContainer.value) {
-    chatContainer.value.scrollTo({
-      top: chatContainer.value.scrollHeight,
-      behavior: "smooth",
-    });
-  }
-};
-
-const selectChat = (chat: Chat) => {
-  selectedChat.value = chat;
-  messages.value = [...((chatMessages as any)[chat.id] || [])];
-  scrollToBottom();
-};
-
-const sendMessage = () => {
-  if (!messageInput.value.trim() || !selectedChat.value) return;
-  messages.value.push({
-    id: `m${Date.now()}`,
-    senderId: "user1",
-    senderName: "Tú",
-    content: messageInput.value,
-    timestamp: new Date(),
-    type: "text",
-  });
-  messageInput.value = "";
-};
-
-// CREACIÓN DE GRUPO
-const handleCreateGroup = () => {
-  if (!newGroupName.value || selectedContacts.value.length === 0) return;
-  showCreateGroupModal.value = false;
-  newGroupName.value = "";
-  selectedContacts.value = [];
-};
-
-const toggleContact = (id: string) => {
-  const idx = selectedContacts.value.indexOf(id);
-  if (idx > -1) selectedContacts.value.splice(idx, 1);
-  else selectedContacts.value.push(id);
-};
-
-// FUNCIONES DE LLAMADA
 const handleCall = (type: "audio" | "video") => {
+  if (!selectedChat.value) return;
   alert(
-    `Iniciando ${type === "video" ? "videollamada" : "llamada"} con ${selectedChat.value?.name}...`,
+    `Iniciando ${type === "video" ? "videollamada" : "llamada"} con ${selectedChat.value.name}...`,
   );
 };
 
@@ -126,32 +128,73 @@ const getSenderName = (chat: Chat, msg: ChatMessage) => {
   return msg.senderName || "Usuario";
 };
 
-// BÚSQUEDA FUNCIONAL SIDEBAR
+const handleCreateGroup = async () => {
+  if (!newGroupName.value || selectedContacts.value.length === 0) return;
+
+  const newGroup = {
+    id: `g${Date.now()}`,
+    name: newGroupName.value,
+    type: "group",
+    avatar: "👥",
+    participants: ["user1", ...selectedContacts.value],
+  };
+
+  try {
+    const res = await fetch(`${API_URL}/api/chats`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newGroup),
+    });
+
+    if (res.ok) {
+      chats.value.unshift(newGroup as Chat);
+      showCreateGroupModal.value = false;
+      newGroupName.value = "";
+      selectedContacts.value = [];
+    }
+  } catch (error) {
+    console.error("Error al crear grupo:", error);
+  }
+};
+
+const scrollToBottom = async () => {
+  await nextTick();
+  if (chatContainer.value) {
+    chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+  }
+};
+
+const toggleContact = (id: string) => {
+  const idx = selectedContacts.value.indexOf(id);
+  if (idx > -1) selectedContacts.value.splice(idx, 1);
+  else selectedContacts.value.push(id);
+};
+
 const filteredChats = computed(() => {
   const q = searchMessage.value.toLowerCase().trim();
-  if (!q) return chats;
-  return chats.filter(
+  if (!q) return chats.value;
+  return chats.value.filter(
     (c) =>
       c.name.toLowerCase().includes(q) ||
-      (c.lastMessage && c.lastMessage.toLowerCase().includes(q)),
+      c.lastMessage?.toLowerCase().includes(q),
   );
 });
 
-// BÚSQUEDA FUNCIONAL MODAL
 const filteredContacts = computed(() => {
   const q = searchContact.value.toLowerCase().trim();
-  if (!q) return availableContacts;
-  return availableContacts.filter((c) => c.name.toLowerCase().includes(q));
+  if (!q) return availableContacts.value;
+  return availableContacts.value.filter((c) =>
+    c.name.toLowerCase().includes(q),
+  );
 });
 
 const formatTime = (date: string | Date) =>
-  new Date(date).toLocaleTimeString("es-ES", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-const formatDate = (date: string | Date) =>
-  new Date(date).toLocaleDateString("es-ES");
+const formatDate = (date: string | Date) => {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString();
+};
 
 watch(messages, scrollToBottom, { deep: true });
 </script>
@@ -356,7 +399,7 @@ watch(messages, scrollToBottom, { deep: true });
               <p class="text-[10px] text-blue-400 font-medium">
                 {{
                   selectedChat.type === "group"
-                    ? selectedChat.participants.length + " miembros"
+                    ? (selectedChat.participants?.length || 0) + " miembros"
                     : getChatOnlineStatus(selectedChat)
                       ? "En línea"
                       : "Desconectado"
