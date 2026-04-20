@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+body {
+  @apply bg-gray-200;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* capa de imagen con opacity */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("@/assets/bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+
+  opacity: 0.5; /* 👈 aquí controlas la intensidad */
+  z-index: -1;
+}
