@@ -53,7 +53,7 @@ type Rank = {
   special?: string;
 };
 
-const ranks: Rank[] = [
+const ranks: [Rank, ...Rank[]] = [
   { name: "Turista", min: 0, max: 500, color: "text-white", medal: null },
   { name: "Fan", min: 501, max: 1500, color: "text-amber-300", medal: "🥉" },
   {

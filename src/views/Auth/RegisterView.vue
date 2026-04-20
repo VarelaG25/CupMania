@@ -1,19 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import {
-  Mail,
-  Lock,
-  User,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-} from "lucide-vue-next";
+import { Mail, Lock, User, CheckCircle2, AlertCircle } from "lucide-vue-next";
 import { io, Socket } from "socket.io-client";
 
 import BaseInput from "@/components/VInpput/VInput.vue";
 import PasswordInput from "@/components/VInpput/VPasswordInput.vue";
-import BaseButton from "@/components/VButton/VButton.vue";
 
 const router = useRouter();
 const API_URL = "http://localhost:3000";

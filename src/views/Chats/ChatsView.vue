@@ -4,13 +4,8 @@ import { io, Socket } from "socket.io-client";
 import {
   ArrowLeft,
   Send,
-  Video,
-  Phone,
-  Plus,
-  Smile,
   Search,
   UserPlus,
-  MoreVertical,
   X,
   Users,
   Check,
