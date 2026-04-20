@@ -135,26 +135,27 @@ const closeMenu = () => {
         <template v-else>
           <RouterLink
             to="/profile"
-            class="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 transition"
+            class="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-300 transition"
           >
             <div
-              class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center"
+              class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center"
             >
-              <UserIcon class="w-4 h-4 text-green-700" />
+              <UserIcon class="w-4 h-4 text-white" />
             </div>
 
             <div class="flex flex-col leading-tight">
-              <span class="text-sm font-semibold text-slate-800">
+              <span class="text-sm font-semibold text-white">
                 {{ userStore.user.name }}
               </span>
 
-              <span class="text-xs text-slate-600"> </span>
+              <span class="text-xs text-slate-400">
+                {{ currentRank.name }}
+              </span>
             </div>
           </RouterLink>
-
           <button
             @click="handleLogout"
-            class="p-2 text-white/50 hover:text-red-400 transition-colors"
+            class="p-2 bg-red-400/10 hover:bg-white rounded-lg text-red-400 transition-colors"
             title="Cerrar sesión"
           >
             <LogOut class="w-5 h-5" />
@@ -196,7 +197,9 @@ const closeMenu = () => {
                 <div class="font-medium text-white">
                   {{ userStore.user.name }}
                 </div>
-                <div class="text-xs text-slate-300"></div>
+                <div class="text-xs text-slate-400">
+                  {{ currentRank.name }}
+                </div>
               </div>
 
               <button

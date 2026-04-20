@@ -3,6 +3,8 @@ import { computed } from "vue";
 import { useRoute } from "vue-router";
 import Navbar from "@/components/VNavBar/VNavBar.vue";
 import VFooter from "./components/VNavBar/VFooter.vue";
+import { useUserStore } from "@/store/userStore";
+useUserStore().loadUser();
 
 const route = useRoute();
 

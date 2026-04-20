@@ -155,7 +155,9 @@ const handleRegister = () => {
           label="Nombre"
           placeholder="Tu nombre"
           :icon="User"
-          defaultClass="text-white/70 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 transition"
+          defaultClass="text-white/70 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 transition placeholder:text-white/40"
+          default-class-icon="text-white/70"
+          default-class-label="text-white/90"
         />
 
         <BaseInput
@@ -164,7 +166,9 @@ const handleRegister = () => {
           type="email"
           placeholder="correo@email.com"
           :icon="Mail"
-          defaultClass="text-white/70 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 transition"
+          defaultClass="text-white/70 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 transition placeholder:text-white/40"
+          default-class-icon="text-white/70"
+          default-class-label="text-white/90"
         />
 
         <PasswordInput v-model="password" label="Contraseña" :icon="Lock" />
